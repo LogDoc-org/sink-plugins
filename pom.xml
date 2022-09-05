@@ -4,7 +4,7 @@
 
     <groupId>org.logdoc</groupId>
     <artifactId>sink-plugins</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4-SNAPSHOT</version>
 
     <name>Logdoc Sink plugins</name>
     <description>LogDoc.org project sink (acceptors) plugins</description>
