@@ -13,27 +13,18 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.function.Consumer;
 
-import static org.logdoc.LogDocConstants.Fields.AppName;
-import static org.logdoc.LogDocConstants.Fields.Ip;
-import static org.logdoc.LogDocConstants.Fields.Level;
-import static org.logdoc.LogDocConstants.Fields.Message;
-import static org.logdoc.LogDocConstants.Fields.Pid;
-import static org.logdoc.LogDocConstants.Fields.Source;
-import static org.logdoc.LogDocConstants.Fields.TimeSrc;
+import static org.logdoc.LogDocConstants.Fields.*;
 import static org.logdoc.LogDocConstants.logTimeFormat;
 
-public class PythonPlugin implements SinkPlugin {
+/**
+ * Python native logging protocol handler
+ */
+public class PythonHandler implements SinkPlugin {
     private static final Set<ConnectionType> ct = new HashSet<>(2);
     private static final byte[] delimiter = {0, 0, 0};
-    //    private static final int emptyString = 78; // N - push None
     private static final int int1Byte = 75; // K - push 1-byte unsigned int
     private static final int int2Bytes = 77; // M - push 2-byte unsigned int
     private static final int int4Bytes = 74; // J - four-byte signed int

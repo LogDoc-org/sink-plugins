@@ -31,8 +31,11 @@ import static org.logdoc.LogDocConstants.logTimeFormat;
 import static org.logdoc.utils.Tools.getInt;
 import static org.logdoc.utils.Tools.notNull;
 
-public class JournaldPlugin implements SinkPlugin {
-    private static final Logger logger = LoggerFactory.getLogger(JournaldPlugin.class);
+/**
+ * Journald native protocol handler
+ */
+public class JournaldHandler implements SinkPlugin {
+    private static final Logger logger = LoggerFactory.getLogger(JournaldHandler.class);
     private static final Set<ConnectionType> ct = Collections.singleton(new ConnectionType());
 
     static {
@@ -43,7 +46,7 @@ public class JournaldPlugin implements SinkPlugin {
     private Consumer<LogEntry> entryConsumer;
     private final ConcurrentMap<DataAddress, StreamData> flaps;
 
-    public JournaldPlugin() {
+    public JournaldHandler() {
         flaps = new ConcurrentHashMap<>(0);
     }
 
@@ -53,7 +56,7 @@ public class JournaldPlugin implements SinkPlugin {
     }
 
     @Override
-    public void configure(final Config config, final Consumer<LogEntry> entryConsumer) {
+    public void configure(final Config config, final Consumer<LogEntry> alien) {
         this.entryConsumer = entry -> {
             if (entry.field("MESSAGE") == null)
                 return;
@@ -69,15 +72,16 @@ public class JournaldPlugin implements SinkPlugin {
                 logger.error(e.getMessage(), e);
             }
             entry.field(AppName, notNull(entry.fieldRemove("SYSLOG_IDENTIFIER"), "unknown"));
-            entry.field(Level, SyslogPlugin.L2L.values()[level].ldl.name());
+            entry.field(Level, SyslogHandler.L2L.values()[level].ldl.name());
             entry.field(Pid, notNull(entry.fieldRemove("SYSLOG_PID"), "000"));
-            entry.field(Source, "journald." + SyslogPlugin.FACILITY.values()[facility].name() + "." + entry.field(AppName));
+            entry.field(Source, "journald." + SyslogHandler.FACILITY.values()[facility].name() + "." + entry.field(AppName));
             entry.field(Message, entry.fieldRemove("MESSAGE"));
 
-            entryConsumer.accept(entry);
+            alien.accept(entry);
         };
     }
 
+    @Override
     public byte[] chunk(final byte[] data0, final DataAddress source) {
         if (!flaps.containsKey(source)) {
             flaps.put(source, new StreamData());
@@ -101,9 +105,9 @@ public class JournaldPlugin implements SinkPlugin {
             next = i < data.length - 1 ? data[i + 1] : -1;
 
             if (b == '\n') {
-                if (from == -1) { // конец entry
+                if (from == -1) {
                     entryConsumer.accept(sd.entry);
-                    if (next == -1) { // конец куска данных
+                    if (next == -1) {
                         flaps.remove(source);
                         return null;
                     }
@@ -115,7 +119,7 @@ public class JournaldPlugin implements SinkPlugin {
                     continue;
                 }
 
-                if (tmp == null) { // название поля, дальше будет размер - инт в 4 байтах
+                if (tmp == null) {
                     tmp = new String(Arrays.copyOfRange(data, from, i), StandardCharsets.UTF_8);
 
                     if (data.length - i > 9) {

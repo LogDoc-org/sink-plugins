@@ -20,7 +20,10 @@ import static org.logdoc.LogDocConstants.Fields.Ip;
 import static org.logdoc.LogDocConstants.header;
 
 
-public class LogbackPlugin implements SinkPlugin {
+/**
+ * Logdoc native protocol handler (TCP)
+ */
+public class LogdocTcpHandler implements SinkPlugin {
     private static final Set<ConnectionType> ct;
 
     static {
@@ -34,7 +37,7 @@ public class LogbackPlugin implements SinkPlugin {
     private final ConcurrentMap<DataAddress, StreamData> flaps;
     private Consumer<LogEntry> entryConsumer;
 
-    public LogbackPlugin() {
+    public LogdocTcpHandler() {
         flaps = new ConcurrentHashMap<>(8);
     }
 

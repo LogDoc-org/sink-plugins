@@ -27,8 +27,11 @@ import static org.logdoc.LogDocConstants.Fields.Ip;
 import static org.logdoc.LogDocConstants.header;
 import static org.logdoc.utils.Tools.isEmpty;
 
-public class LogbackUdpPlugin implements SinkPlugin {
-    private static final Logger logger = LoggerFactory.getLogger(LogbackUdpPlugin.class);
+/**
+ * Logdoc native protocol handler (UDP)
+ */
+public class LogdocUdpHandler implements SinkPlugin {
+    private static final Logger logger = LoggerFactory.getLogger(LogdocUdpHandler.class);
     private static final long expired = 1000L * 60L * 3L;
     private static final Set<ConnectionType> ct = Collections.singleton(new ConnectionType());
 
@@ -40,7 +43,7 @@ public class LogbackUdpPlugin implements SinkPlugin {
     private final ConcurrentMap<TimedId, AllData> flaps;
     private Consumer<LogEntry> entryConsumer;
 
-    public LogbackUdpPlugin() {
+    public LogdocUdpHandler() {
         flaps = new ConcurrentHashMap<>(1);
     }
 

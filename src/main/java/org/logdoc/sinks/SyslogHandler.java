@@ -32,7 +32,10 @@ import static org.logdoc.utils.Tools.getInt;
 import static org.logdoc.utils.Tools.isEmpty;
 import static org.logdoc.utils.Tools.notNull;
 
-public class SyslogPlugin implements SinkPlugin {
+/**
+ * (r)Syslog native protocol handler
+ */
+public class SyslogHandler implements SinkPlugin {
     private static final String bsdDateTimePattern = "MMM [ ][d][d] HH:mm:ss[ yyyy]";
     private static final Set<ConnectionType> ct = new HashSet<>(2);
 
@@ -53,7 +56,7 @@ public class SyslogPlugin implements SinkPlugin {
     private final Set<Byte> delimiters;
     private Consumer<LogEntry> entryConsumer;
 
-    public SyslogPlugin() {
+    public SyslogHandler() {
         this.delimiters = new HashSet<>(2);
         this.format = new AtomicReference<>(DateTimeFormatter.ofPattern(bsdDateTimePattern, Locale.forLanguageTag("en")));
         flaps = new ConcurrentHashMap<>(0);

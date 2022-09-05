@@ -17,11 +17,9 @@ import java.util.function.Consumer;
 import static org.logdoc.LogDocConstants.Fields.Ip;
 
 /**
- * @author Denis Danilin | me@loslobos.ru
- * 05.01.2022 18:23
- * hive-sinks-lib ☭ sweat and blood
+ * Logdoc native protocol handler (HTTP)
  */
-public class LogbackHttpPlugin implements SinkPlugin {
+public class LogdocHttpHandler implements SinkPlugin {
     private static final Set<ConnectionType> ids = Collections.singleton(new ConnectionType(Proto.HTTP, "Logdoc-Logback-Http-Handler"));
     private static final byte[] okBytes = "HTTP/1.1 200\r\n\r\n".getBytes(StandardCharsets.UTF_8);
 
