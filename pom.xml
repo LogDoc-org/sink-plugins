@@ -47,10 +47,10 @@
     </developers>
 
     <scm>
-        <connection>scm:git:ssh://git@github.com/logdocpub/sinks.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/logdocpub/sinks.git</developerConnection>
-        <tag>sink-plugins-1.0.3</tag>
-        <url>https://github.com/logdocpub/sinks</url>
+        <connection>scm:git:ssh://git@github.com/LogDoc-org/sink-plugins.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/LogDoc-org/sink-plugins.git</developerConnection>
+        <tag>sink-plugins-1.0.5</tag>
+        <url>https://github.com/LogDoc-org/sink-plugins</url>
     </scm>
 
     <properties>
