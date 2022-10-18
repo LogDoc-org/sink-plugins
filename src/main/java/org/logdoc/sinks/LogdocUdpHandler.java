@@ -64,7 +64,7 @@ public class LogdocUdpHandler implements SinkPlugin {
 
         final short cycles = data[2];
 
-        if (cycles == 1) {
+        if (cycles < 2) {
             doEntry(new AllData(data, source.ip(), source.host()));
             return null;
         }
