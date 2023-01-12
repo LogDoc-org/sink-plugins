@@ -27,3 +27,11 @@ chunk(byte[] data, DataAddress source)
 разместить соответствующий jar в classpath улья и указать имя класса в конфиге, 
 в секции `logdoc.plugins.sinks` - при следующей инициализации улья плагин будет загружен
 и управляющие модули получат возможность открывать в этом улье соты с реализованной обработкой.
+
+Использование
+------
+        <dependency>
+            <groupId>org.logdoc</groupId>
+            <artifactId>sink-plugins</artifactId>
+            <version>1.0.5</version>
+        </dependency>
