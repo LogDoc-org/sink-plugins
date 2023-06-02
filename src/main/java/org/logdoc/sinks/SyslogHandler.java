@@ -28,9 +28,9 @@ import static org.logdoc.LogDocConstants.Fields.AppName;
 import static org.logdoc.LogDocConstants.Fields.Ip;
 import static org.logdoc.LogDocConstants.Fields.Pid;
 import static org.logdoc.LogDocConstants.logTimeFormat;
-import static org.logdoc.utils.Tools.getInt;
-import static org.logdoc.utils.Tools.isEmpty;
-import static org.logdoc.utils.Tools.notNull;
+import static org.logdoc.helpers.Digits.getInt;
+import static org.logdoc.helpers.Texts.isEmpty;
+import static org.logdoc.helpers.Texts.notNull;
 
 /**
  * (r)Syslog native protocol handler

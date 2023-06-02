@@ -6,7 +6,6 @@ import org.logdoc.sdk.SinkPlugin;
 import org.logdoc.structs.DataAddress;
 import org.logdoc.structs.LogEntry;
 import org.logdoc.structs.enums.Proto;
-import org.logdoc.utils.Tools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +24,8 @@ import java.util.function.Consumer;
 
 import static org.logdoc.LogDocConstants.Fields.Ip;
 import static org.logdoc.LogDocConstants.header;
-import static org.logdoc.utils.Tools.isEmpty;
+import static org.logdoc.helpers.BinFlows.asInt;
+import static org.logdoc.helpers.Texts.isEmpty;
 
 /**
  * Logdoc native protocol handler (UDP)
@@ -202,7 +202,7 @@ public class LogdocUdpHandler implements SinkPlugin {
                 return null;
 
             if (b == '\n')
-                size = Tools.asInt(new byte[]{next(), next(), next(), next()});
+                size = asInt(new byte[]{next(), next(), next(), next()});
             else
                 size = -1;
 

@@ -79,8 +79,13 @@
         <dependency>
             <groupId>org.logdoc</groupId>
             <artifactId>sdk</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.7</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.logdoc</groupId>
+            <artifactId>code-helpers</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>

@@ -28,8 +28,8 @@ import static org.logdoc.LogDocConstants.Fields.Message;
 import static org.logdoc.LogDocConstants.Fields.Pid;
 import static org.logdoc.LogDocConstants.Fields.Source;
 import static org.logdoc.LogDocConstants.logTimeFormat;
-import static org.logdoc.utils.Tools.getInt;
-import static org.logdoc.utils.Tools.notNull;
+import static org.logdoc.helpers.Digits.getInt;
+import static org.logdoc.helpers.Texts.notNull;
 
 /**
  * Journald native protocol handler

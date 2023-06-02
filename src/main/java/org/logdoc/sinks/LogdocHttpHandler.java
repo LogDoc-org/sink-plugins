@@ -6,7 +6,6 @@ import org.logdoc.sdk.SinkPlugin;
 import org.logdoc.structs.DataAddress;
 import org.logdoc.structs.LogEntry;
 import org.logdoc.structs.enums.Proto;
-import org.logdoc.utils.Tools;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -15,6 +14,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.logdoc.LogDocConstants.Fields.Ip;
+import static org.logdoc.helpers.BinFlows.asInt;
 
 /**
  * Logdoc native protocol handler (HTTP)
@@ -46,9 +46,13 @@ public class LogdocHttpHandler implements SinkPlugin {
     public byte[] chunk(final byte[] data, final DataAddress dataAddress) {
         int i = 0;
 
-        for (; i < data.length; i++)
-            if (data[i] == '\n' && i < data.length - 1 && data[i + 1] == '\n') {
-                i += 2;
+        // skip all http data, look for double crlf
+        for (; i < data.length - 4; i++)
+            if (data[i] == '\r' &&
+                    data[i + 1] == '\n' &&
+                    data[i + 2] == '\r' &&
+                    data[i + 3] == '\n') {
+                i += 4;
                 break;
             }
 
@@ -72,7 +76,7 @@ public class LogdocHttpHandler implements SinkPlugin {
                     tmp = new String(Arrays.copyOfRange(data, from, i), StandardCharsets.UTF_8);
 
                     if (data.length - i > 5) {
-                        size = Tools.asInt(new byte[]{data[++i], data[++i], data[++i], data[++i]}) - 1;
+                        size = asInt(new byte[]{data[++i], data[++i], data[++i], data[++i]}) - 1;
                         from = i + 1;
 
                         if (size + from > data.length)

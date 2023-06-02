@@ -6,7 +6,6 @@ import org.logdoc.sdk.SinkPlugin;
 import org.logdoc.structs.DataAddress;
 import org.logdoc.structs.LogEntry;
 import org.logdoc.structs.enums.Proto;
-import org.logdoc.utils.Tools;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -18,6 +17,7 @@ import java.util.function.Consumer;
 
 import static org.logdoc.LogDocConstants.Fields.Ip;
 import static org.logdoc.LogDocConstants.header;
+import static org.logdoc.helpers.BinFlows.asInt;
 
 
 /**
@@ -126,7 +126,7 @@ public class LogdocTcpHandler implements SinkPlugin {
                     sd.state = STATE.name;
 
                 if (sd.state == STATE.size && i == j + 4) {
-                    size = Tools.asInt(Arrays.copyOfRange(data, j, i));
+                    size = asInt(Arrays.copyOfRange(data, j, i));
                     sd.state = STATE.valueS;
                     j = i;
                 } else if (sd.state == STATE.valueS && i == j + size - 1) {
