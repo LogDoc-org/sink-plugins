@@ -7,25 +7,32 @@ import org.logdoc.structs.DataAddress;
 import org.logdoc.structs.LogEntry;
 import org.logdoc.structs.enums.Proto;
 
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 import static org.logdoc.LogDocConstants.Fields.Ip;
-import static org.logdoc.helpers.BinFlows.asInt;
+import static org.logdoc.helpers.Texts.isEmpty;
 
 /**
  * Logdoc native protocol handler (HTTP)
  */
 public class LogdocHttpHandler implements SinkPlugin {
     private static final Set<ConnectionType> ids = Collections.singleton(new ConnectionType(Proto.HTTP, "Logdoc-Logback-Http-Handler"));
-    private static final byte[] okBytes = "HTTP/1.1 200\r\n\r\n".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] okBytes = "HTTP/1.1 204 No Content\r\n\r\n".getBytes(StandardCharsets.UTF_8);
 
     private long maxRequestSize = 1024 * 128;
 
     private Consumer<LogEntry> consumer;
+
+    @Override
+    public boolean isDeterminated() {
+        return true;
+    }
 
     @Override
     public void configure(final Config config, final Consumer<LogEntry> consumer) {
@@ -56,53 +63,27 @@ public class LogdocHttpHandler implements SinkPlugin {
                 break;
             }
 
-        byte b;
-        String tmp = null;
-        final StreamData sd = new StreamData();
-        sd.entry = new LogEntry();
-        sd.entry.field(Ip, dataAddress.ip());
-        sd.entry.field("host", dataAddress.host());
+        if (i == 0)
+            return okBytes;
 
-        for (int from = -1, size = -1; i < data.length; i++) {
-            b = data[i];
+        final String body = new String(Arrays.copyOfRange(data, i, data.length), StandardCharsets.UTF_8);
+        final String[] fields = body.split(Pattern.quote("&"));
 
-            if (b == '\n') {
-                if (from == -1) { // конец entry
-                    consumer.accept(sd.entry);
-                    break;
-                }
+        final LogEntry entry = new LogEntry();
 
-                if (tmp == null) { // название поля, дальше будет размер - инт в 4 байтах
-                    tmp = new String(Arrays.copyOfRange(data, from, i), StandardCharsets.UTF_8);
+        String[] pair;
+        for (final String field : fields)
+            try {
+                pair = field.split(Pattern.quote("="), 2);
 
-                    if (data.length - i > 5) {
-                        size = asInt(new byte[]{data[++i], data[++i], data[++i], data[++i]}) - 1;
-                        from = i + 1;
+                if (pair.length == 2)
+                    entry.field(pair[0], URLDecoder.decode(pair[1], "UTF-8"));
+            } catch (final Exception ignore) {}
 
-                        if (size + from > data.length)
-                            break;
-                    } else
-                        break;
-                } else { // значение поля
-                    sd.entry.field(tmp, new String(Arrays.copyOfRange(data, from, i), StandardCharsets.UTF_8));
-                    from = -1;
-                    tmp = null;
-                }
-            } else if (b == '=') {
-                if (tmp == null && from != -1) { // значение поля
-                    tmp = new String(Arrays.copyOfRange(data, from, i), StandardCharsets.UTF_8);
-                    from = i + 1;
-                }
-            } else {
-                if (from == -1)
-                    from = i;
-                else if (size != -1 && from + size == i && tmp != null) {
-                    sd.entry.field(tmp, new String(Arrays.copyOfRange(data, from, i + 1), StandardCharsets.UTF_8));
-                    from = -1;
-                    size = -1;
-                    tmp = null;
-                }
-            }
+        if (!isEmpty(entry.entry)) {
+            entry.field(Ip, dataAddress.ip());
+            entry.field("host", dataAddress.host());
+            consumer.accept(entry);
         }
 
         return okBytes;
@@ -111,10 +92,6 @@ public class LogdocHttpHandler implements SinkPlugin {
     @Override
     public long maxReadBuf() {
         return maxRequestSize;
-    }
-
-    private static class StreamData {
-        private LogEntry entry;
     }
 
     @Override
