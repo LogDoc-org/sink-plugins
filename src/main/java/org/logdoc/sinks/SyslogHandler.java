@@ -11,22 +11,13 @@ import org.logdoc.structs.enums.Proto;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static org.logdoc.LogDocConstants.Fields.AppName;
-import static org.logdoc.LogDocConstants.Fields.Ip;
-import static org.logdoc.LogDocConstants.Fields.Pid;
+import static org.logdoc.LogDocConstants.Fields.*;
 import static org.logdoc.LogDocConstants.logTimeFormat;
 import static org.logdoc.helpers.Digits.getInt;
 import static org.logdoc.helpers.Texts.isEmpty;
@@ -92,47 +83,68 @@ public class SyslogHandler implements SinkPlugin {
 
     @Override
     public byte[] chunk(final byte[] data0, final DataAddress source) {
-        if (!flaps.containsKey(source)) {
-            flaps.put(source, new StreamData());
-            flaps.get(source).src = source;
-            flaps.get(source).entry = new LogEntry();
-            flaps.get(source).entry.field(Ip, source.ip());
-            flaps.get(source).entry.field("host", source.host());
+        StreamData sd = flaps.get(source);
+        if (sd == null) {
+            sd = new StreamData();
+            flaps.put(source, sd);
+
+            sd.src = source;
+            sd.entry = new LogEntry();
+            sd.entry.field(Ip, source.ip());
+            sd.entry.field("host", source.host());
         }
 
-        StreamData sd = flaps.get(source);
         final byte[] data = sd.data == null ? data0 : new byte[sd.data.length + data0.length];
         if (sd.data != null) {
             System.arraycopy(sd.data, 0, data, 0, sd.data.length);
             System.arraycopy(data0, 0, data, sd.data.length, data0.length);
         }
 
-        if (sd.priority == -1)
-            priority(data, sd);
-        else if (sd.bsd == null)
-            logType(0, data, sd);
-        else if (sd.bsd) {
-            if (sd.entry.srcTime == null)
-                bsdDate(0, data, sd);
-            else if (sd.entry.field("domain") == null)
-                bsdDomain(0, data, sd);
-            else
-                body(0, data, sd);
-        } else {
-            if (sd.entry.srcTime == null)
-                date(0, data, sd);
-            else if (sd.entry.field("domain") == null)
-                domain(0, data, sd);
-            else if (sd.entry.appName == null)
-                app(0, data, sd);
-            else if (sd.entry.pid == null)
-                pid(0, data, sd);
-            else if (sd.entry.field("msgId") == null)
-                msgId(0, data, sd);
-            else if (sd.structs == null)
-                structs(0, data, sd);
-            else
-                body(0, data, sd);
+        try {
+            if (sd.priority == -1)
+                priority(data, sd);
+            else if (sd.bsd == null)
+                logType(0, data, sd);
+            else if (sd.bsd) {
+                if (sd.entry.srcTime == null)
+                    bsdDate(0, data, sd);
+                else if (sd.entry.field("domain") == null)
+                    bsdDomain(0, data, sd);
+                else
+                    body(0, data, sd);
+            } else {
+                if (sd.entry.srcTime == null)
+                    date(0, data, sd);
+                else if (sd.entry.field("domain") == null)
+                    domain(0, data, sd);
+                else if (sd.entry.appName == null)
+                    app(0, data, sd);
+                else if (sd.entry.pid == null)
+                    pid(0, data, sd);
+                else if (sd.entry.field("msgId") == null)
+                    msgId(0, data, sd);
+                else if (sd.structs == null)
+                    structs(0, data, sd);
+                else
+                    body(0, data, sd);
+            }
+        } catch (final Exception e) {
+            try {
+                if (sd.priority == -1 || sd.bsd == null || data == null)
+                    throw e;
+
+                sd.entry.entry = new String(data, StandardCharsets.UTF_8).trim();
+
+                if (isEmpty(sd.entry.entry))
+                    throw e;
+
+                if (sd.entry.srcTime == null)
+                    sd.entry.srcTime = LocalDateTime.now().format(logTimeFormat);
+
+                afterBody(sd);
+            } finally {
+                flaps.remove(sd.src);
+            }
         }
 
         return null;
@@ -304,6 +316,7 @@ public class SyslogHandler implements SinkPlugin {
             body(right, data, sd);
     }
 
+    // Jun 14 09:30:41 _gateway device_name="SFW" timestamp="2024-06-14T09:30:41+0500" device_model="XGS2100" device_serial_id="X21015VHDKBG47C" log_id=050901616001 log_type="Content Filtering" log_component="HTTP" log_subtype="Allowed" log_version=1 severity="Information" fw_rule_id="109" fw_rule_name="UNIRED_TO_SHINA" fw_rule_section="Local rule" web_policy_id=13 http_category="IPAddress" http_category_type="Acceptable" url="http://10.48.208.110:9093/1.0.0/transactions/2453127921" content_type="application/json" src_ip="192.168.202.250" dst_ip="10.48.208.110" protocol="TCP" src_port=35550 dst_port=9093 bytes_sent=340 bytes_received=893 domain="10.48.208.110" http_status="200" transaction_id="9f09af63-685a-42eb-82d5-9fe002478c9e" con_id=2194528192 app_is_cloud="FALSE" used_quota="0" src_zone_type="VPN" src_zone="VPN" dst_zone_type="DMZ" dst_zone="DMZ" src_country="R1" dst_country="R1"
     private void bsdDate(final int idx, final byte[] data, final StreamData sd) {
         int i = idx;
         while (i < data.length - 1 && Character.isWhitespace(data[i])) i++;
@@ -360,6 +373,14 @@ public class SyslogHandler implements SinkPlugin {
                 }
 
         sd.entry.entry = new String(Arrays.copyOfRange(data, from, till), StandardCharsets.UTF_8).trim();
+
+        afterBody(sd);
+
+        if (data.length > till)
+            chunk(Arrays.copyOfRange(data, i, data.length), sd.src);
+    }
+
+    private void afterBody(final StreamData sd) {
         final int facility = sd.priority >> 3;
         final int level = sd.priority - (facility << 3);
         sd.entry.level = L2L.values()[level].ldl;
@@ -384,17 +405,6 @@ public class SyslogHandler implements SinkPlugin {
 
         entryConsumer.accept(sd.entry);
         flaps.remove(sd.src);
-
-        if (data.length > till)
-            chunk(Arrays.copyOfRange(data, i, data.length), sd.src);
-    }
-
-    private static class SysStruct extends HashMap<String, String> {
-        String name, tmp;
-
-        void put(final String value) {
-            put(name + "@@" + tmp, value);
-        }
     }
 
     enum L2L {
@@ -409,6 +419,14 @@ public class SyslogHandler implements SinkPlugin {
     enum FACILITY {
         KERNEL, USER, MAIL, DAEMON, AUTH, SYSLOG, PRINT, NEWS, UUCP, CRON, AUTHPRIV, FTP, NTP, JOURNAL_AUDIT, JOURNAL_WARN, CRON_DAEMON, LOCAL0, LOCAL1, LOCAL2, LOCAL3, LOCAL4,
         LOCAL5, LOCAL6, LOCAL7
+    }
+
+    private static class SysStruct extends HashMap<String, String> {
+        String name, tmp;
+
+        void put(final String value) {
+            put(name + "@@" + tmp, value);
+        }
     }
 
     private static class StreamData {

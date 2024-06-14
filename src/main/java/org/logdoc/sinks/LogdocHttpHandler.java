@@ -23,7 +23,7 @@ import static org.logdoc.helpers.Texts.isEmpty;
  */
 public class LogdocHttpHandler implements SinkPlugin {
     private static final Set<ConnectionType> ids = Collections.singleton(new ConnectionType(Proto.HTTP, "Logdoc-Logback-Http-Handler"));
-    private static final byte[] okBytes = "HTTP/1.1 204 No Content\r\n\r\n".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] okBytes = "HTTP/1.1 204\r\nServer: LogDoc\r\nConnection: keep-alive\r\n\r\n".getBytes(StandardCharsets.US_ASCII);
 
     private long maxRequestSize = 1024 * 128;
 
