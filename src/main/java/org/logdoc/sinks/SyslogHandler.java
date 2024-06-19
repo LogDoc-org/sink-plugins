@@ -110,6 +110,8 @@ public class SyslogHandler implements SinkPlugin {
                     bsdDate(0, data, sd);
                 else if (sd.entry.field("domain") == null)
                     bsdDomain(0, data, sd);
+                else if (sd.entry.appName == null)
+                    bsdApp(0, data, sd);
                 else
                     body(0, data, sd);
             } else {
@@ -387,7 +389,7 @@ public class SyslogHandler implements SinkPlugin {
         sd.entry.field("priority", String.valueOf(sd.priority));
         sd.entry.field("facility", String.valueOf(facility));
 
-        final int bi = sd.entry.field(AppName).indexOf('[');
+        final int bi = notNull(sd.entry.field(AppName)).indexOf('[');
         if (bi > 0) {
             sd.entry.field("instId", sd.entry.field(AppName).substring(bi + 1).replace("]", ""));
             sd.entry.field(AppName, sd.entry.field(AppName).substring(0, bi));
